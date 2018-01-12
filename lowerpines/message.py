@@ -88,6 +88,20 @@ class EmojiAttach(MessageAttach):
         return 'E:' + str(self)
 
 
+# Undocumented feature, but can be used to post images/GIFs without the image service
+# Not sure what other queues exist besides linked_image
+class PostprocessingAttach(MessageAttach):
+    def __init__(self, url, queue='linked_image'):
+        self.url = url
+        self.queue = queue
+
+    def __str__(self):
+        return self.url
+
+    def __repr__(self):
+        return 'P: ' + str(self)
+
+
 class ComplexMessage:
     def __init__(self, data):
         if isinstance(data, list):
@@ -127,6 +141,10 @@ class ComplexMessage:
             'placeholder': EMOJI_PLACEHOLDER,
             'charmap': []
         }
+        postprocessing = {
+            'type': 'postprocessing',
+            'queues': []
+        }
         content_frag = ""
         for part in self.contents:
             if isinstance(part, RefAttach):
@@ -155,6 +173,11 @@ class ComplexMessage:
                 emojis['charmap'].append([part.pack_id, part.emoji_id])
                 if emojis not in attach_list:
                     attach_list.append(emojis)
+            elif isinstance(part, PostprocessingAttach):
+                postprocessing['queues'].append(part.queue)
+                if postprocessing not in attach_list:
+                    attach_list.append(postprocessing)
+
             content_frag += str(part)
         return attach_list
 
